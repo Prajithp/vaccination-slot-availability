@@ -53,20 +53,30 @@ type SlotsResponse struct {
     } `json:"centers"`
 }
 
-func GetStatesList() (map[string]int, error) {
-    reqUrl := "https://cdn-api.co-vin.in/api/v2/admin/location/states"
+func Request(reqUrl string) ( []byte, error ) {
     client := &http.Client{}
     req, err := http.NewRequest("GET", reqUrl, nil)
     if err != nil {
-        return nil, err
+        return []byte{}, err
     }
     resp, err := client.Do(req)
     if err != nil {
-        return nil, err
+        return []byte{}, err
     }
     defer resp.Body.Close()
 
     body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        return []byte{}, err
+    }
+
+    return body, nil
+}
+
+func GetStatesList() (map[string]int, error) {
+    reqUrl := "https://cdn-api.co-vin.in/api/v2/admin/location/states"
+
+    body, err := Request(reqUrl)
     if err != nil {
         return nil, err
     }
@@ -84,18 +94,7 @@ func GetStatesList() (map[string]int, error) {
 
 func GetDistricts( stateId int) (map[string]int, error) {
     reqUrl := fmt.Sprintf("https://cdn-api.co-vin.in/api/v2/admin/location/districts/%v", stateId)
-    client := &http.Client{}
-    req, err := http.NewRequest("GET", reqUrl, nil)
-    if err != nil {
-        return nil, err
-    }
-    resp, err := client.Do(req)
-    if err != nil {
-        return nil, err
-    }
-    defer resp.Body.Close()
-        
-    body, err := ioutil.ReadAll(resp.Body)
+    body, err := Request(reqUrl)
     if err != nil {
         return nil, err
     }
@@ -111,33 +110,22 @@ func GetDistricts( stateId int) (map[string]int, error) {
     return s, nil
 }
 
-func GetSlots( districId int) ( SlotsResponse, error ) {
+func GetSlots( districId int) ( *SlotsResponse, error ) {
     today := time.Now().Format("02-01-2006")
     // log.Printf("%s - %s", today, districId)
     
-    reqUrl := fmt.Sprintf("https://cdn-api.co-vin.in/api/v2/appointment/sessions/calendarByDistrict?district_id=%v&date=%s", districId, today)
-    client := &http.Client{}
-    req, err := http.NewRequest("GET", reqUrl, nil)
+    reqUrl := fmt.Sprintf("https://cdn-api.co-vin.in/api/v2/appointment/sessions/calendarByDistrict?district_id=%v&date=%s", districId, today)        
+    body, err := Request(reqUrl)
     if err != nil {
-        return SlotsResponse{}, err
-    }
-    resp, err := client.Do(req)
-    if err != nil { 
-        return SlotsResponse{}, err
-    }
-    defer resp.Body.Close()
-        
-    body, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-        return SlotsResponse{}, err
+        return nil, err
     }
 
     /* jsonFile, _ := os.Open("/home/prajith/x")
     body, _ := ioutil.ReadAll(jsonFile) */
 
-    var s SlotsResponse
+    var s *SlotsResponse
     if err := json.Unmarshal(body, &s); err != nil {
-        return SlotsResponse{}, err
+        return nil, err
     }
 
     return s, nil
