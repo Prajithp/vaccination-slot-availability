@@ -57,16 +57,23 @@ func Request(reqUrl string) ( []byte, error ) {
     client := &http.Client{}
     req, err := http.NewRequest("GET", reqUrl, nil)
     if err != nil {
+        log.Printf("%v", err)
         return []byte{}, err
     }
+
+    req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:86.0) Gecko/20100101 Firefox/86.0")
+    req.Header.Set("Accept", "application/json")
+
     resp, err := client.Do(req)
     if err != nil {
+        log.Printf("%v", err)
         return []byte{}, err
     }
     defer resp.Body.Close()
 
     body, err := ioutil.ReadAll(resp.Body)
     if err != nil {
+        log.Printf("%v", err)
         return []byte{}, err
     }
 
